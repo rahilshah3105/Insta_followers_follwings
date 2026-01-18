@@ -7,6 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+src/assets/
+# Instagram data files (personal)
+src/assets/followers_and_following/
+src/assets/instagram-rahilshah3105/
+src/assets/instagram-rahilshah3105*.zip
+*.zip
+
+
 node_modules
 dist
 dist-ssr
@@ -22,3 +30,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.zip
