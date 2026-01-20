@@ -1,7 +1,5 @@
 # Instagram Connections Analyzer 🔍
 
-![App Preview](screenshot.png) *(add your screenshot)*
-
 Analyze your Instagram followers/following to see who doesn't follow you back.
 
 ## 📥 How to Get Instagram Data
