@@ -2,11 +2,17 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   FaSun, FaMoon, FaInstagram, FaUserFriends, FaUserCheck,
   FaUserTimes, FaUserClock, FaLink, FaExclamationTriangle, FaHourglassHalf,
-  FaUserSlash, FaUserPlus, FaUpload, FaSearch, FaTrashAlt
+  FaUserSlash, FaUserPlus, FaUpload, FaSearch, FaTrashAlt, FaHeart
 } from 'react-icons/fa';
 import './App.css';
 
+// Custom sub-components
+import AdBanner from './components/AdBanner';
+import DeveloperApps from './components/DeveloperApps';
+import PrivacyPolicy from './components/PrivacyPolicy';
+
 function App() {
+  const [activeTab, setActiveTab] = useState('analyzer');
   const [notFollowingBack, setNotFollowingBack] = useState([]);
   const [youDontFollowBack, setYouDontFollowBack] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -116,25 +122,25 @@ function App() {
       try {
         const res = await fetch('./src/assets/followers_and_following/recent_follow_requests.json');
         if (res.ok) setPendingData(await res.json());
-      } catch (e) {}
+      } catch (e) { }
 
       // Try fetching unfollowed users
       try {
         const res = await fetch('./src/assets/followers_and_following/recently_unfollowed_profiles.json');
         if (res.ok) setUnfollowedData(await res.json());
-      } catch (e) {}
+      } catch (e) { }
 
       // Try fetching blocked profiles
       try {
         const res = await fetch('./src/assets/followers_and_following/blocked_profiles.json');
         if (res.ok) setBlockedData(await res.json());
-      } catch (e) {}
+      } catch (e) { }
 
       // Try fetching received requests
       try {
         const res = await fetch("./src/assets/followers_and_following/follow_requests_you've_received.json");
         if (res.ok) setReceivedRequestsData(await res.json());
-      } catch (e) {}
+      } catch (e) { }
 
       if (hasFollowers || hasFollowing) {
         setIsUsingUploadedData(false);
@@ -184,7 +190,7 @@ function App() {
 
   const mergeJsonData = (prev, next, key) => {
     if (!prev) return next;
-    
+
     const getList = (data) => {
       if (Array.isArray(data)) return data;
       if (data && key && data[key] && Array.isArray(data[key])) return data[key];
@@ -193,7 +199,7 @@ function App() {
 
     const prevList = getList(prev);
     const nextList = getList(next);
-    
+
     // Deduplicate lists based on username/value to prevent duplicate objects
     const seen = new Set();
     const mergedList = [];
@@ -436,8 +442,6 @@ function App() {
     setAdsViewedData(null);
     setLoginActivityData(null);
     setIsUsingUploadedData(false);
-
-    loadDefaultData();
   };
 
   // Process data when loaded
@@ -595,7 +599,7 @@ function App() {
 
   const extractFollowing = (data, unfollowedData) => {
     if (!data) return [];
-    
+
     // Extract unfollowed usernames to filter them out
     const unfollowedUsernames = new Set();
     if (unfollowedData) {
@@ -1119,19 +1123,40 @@ function App() {
   const filteredReceived = receivedRequests.filter(user => user.username.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredSearch = searchHistory.filter(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredAds = adsViewed.filter(item => item.author.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredLogins = loginActivity.filter(item => 
-    item.ip.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredLogins = loginActivity.filter(item =>
+    item.ip.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.userAgent.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   return (
     <div className={`app-container ${darkMode ? 'dark-mode' : ''}`}>
       <header className="app-header">
         <div className="header-content">
           <div className="logo-container">
             <FaInstagram className="logo-icon" />
-            <h1>Instagram Connections Analyzer</h1>
+            <h1>InstaMint</h1>
           </div>
+          
+          <nav className="header-nav">
+            <button
+              onClick={() => setActiveTab('analyzer')}
+              className={`nav-tab-btn ${activeTab === 'analyzer' ? 'active' : ''}`}
+            >
+              Analyzer
+            </button>
+            <button
+              onClick={() => setActiveTab('apps')}
+              className={`nav-tab-btn ${activeTab === 'apps' ? 'active' : ''}`}
+            >
+              Recommended Apps
+            </button>
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className={`nav-tab-btn ${activeTab === 'privacy' ? 'active' : ''}`}
+            >
+              Privacy Policy
+            </button>
+          </nav>
+
           <div className="header-right">
             {ownerProfile && (
               <a
@@ -1149,52 +1174,98 @@ function App() {
           </div>
         </div>
         <p className="subtitle">Discover who's not following you back and more</p>
-      </header>
+      </header>      <div className="dashboard-container">
+        <AdBanner
+          client={import.meta.env.VITE_ADSENSE_CLIENT_ID}
+          slot={import.meta.env.VITE_ADSENSE_TOP_SLOT}
+          mode={darkMode ? 'dark' : 'light'}
+        />
 
-      <div className="dashboard-container">
-        {/* Drop Zone / Upload Section */}
-        <div className="upload-container">
+        {activeTab === 'analyzer' && (
+          <>
+            {/* Drop Zone / Upload Section */}
+            <div className="upload-container">
           {followers.length === 0 && following.length === 0 ? (
-            <div 
-              className="drop-zone large-drop-zone"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="drop-zone-content">
-                <FaUpload className="upload-arrow-icon" />
-                <h2>Import Instagram Export Folder</h2>
-                <p className="upload-description">
-                  Drag and drop your unzipped Instagram data folder here or select the files directly.
-                </p>
-                <div className="upload-actions">
-                  <label htmlFor="folder-upload" className="upload-btn primary-btn">
-                    Select Instagram Folder
-                  </label>
-                  <input 
-                    type="file" 
-                    id="folder-upload" 
-                    webkitdirectory="true" 
-                    directory="true" 
-                    multiple 
-                    onChange={handleFolderUpload}
-                    className="hidden-file-input"
-                  />
+            <div className="uploader-grid-layout">
+              {/* Left Column: Drop Zone */}
+              <div
+                className="drop-zone large-drop-zone"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <div className="drop-zone-content">
+                  <FaUpload className="upload-arrow-icon" />
+                  <h2>Import Instagram Export</h2>
+                  <p className="upload-description">
+                    Drag & drop your unzipped folder or select your JSON files directly.
+                  </p>
+                  <div className="upload-actions">
+                    <label htmlFor="folder-upload" className="upload-btn primary-btn">
+                      Select Instagram Folder
+                    </label>
+                    <input
+                      type="file"
+                      id="folder-upload"
+                      webkitdirectory="true"
+                      directory="true"
+                      multiple
+                      onChange={handleFolderUpload}
+                      className="hidden-file-input"
+                    />
 
-                  <label htmlFor="files-upload" className="upload-btn secondary-btn">
-                    Select JSON Files
-                  </label>
-                  <input 
-                    type="file" 
-                    id="files-upload" 
-                    accept=".json" 
-                    multiple 
-                    onChange={handleFolderUpload}
-                    className="hidden-file-input"
-                  />
+                    <label htmlFor="files-upload" className="upload-btn secondary-btn">
+                      Select JSON Files
+                    </label>
+                    <input
+                      type="file"
+                      id="files-upload"
+                      accept=".json"
+                      multiple
+                      onChange={handleFolderUpload}
+                      className="hidden-file-input"
+                    />
+
+                    <button onClick={loadDefaultData} className="upload-btn secondary-btn">
+                      Load Demo Data
+                    </button>
+                  </div>
                 </div>
-                <div className="guide-box">
-                  <h4>How to get your data:</h4>
-                  <p>Instagram Settings &rarr; Account Center &rarr; Your Information and Data &rarr; Download Your Information. Choose JSON format.</p>
+              </div>
+
+              {/* Right Column: Step-by-Step Instructions */}
+              <div className="instructions-guide-card">
+                <h3><FaExclamationTriangle style={{ color: '#818cf8', marginRight: '10px' }} /> Quick Setup Guide</h3>
+                <div className="guide-steps">
+                  <div className="guide-step">
+                    <span className="step-number">1</span>
+                    <div className="step-text">
+                      <strong>Request Download:</strong> Open Instagram, navigate to <em>Settings & Activity &rarr; Account Center &rarr; Your Information and Data &rarr; Export Your Information &rarr; Create Export</em>.
+                    </div>
+                  </div>
+                  <div className="guide-step">
+                    <span className="step-number">2</span>
+                    <div className="step-text">
+                      <strong>Filter Data Types:</strong> Choose <em>"Customise Information"</em> and select ONLY <strong>Followers and following</strong> - <em>"Inside the Connections Section"</em> (this generates the file in minutes rather than hours/days).
+                    </div>
+                  </div>
+                  <div className="guide-step">
+                    <span className="step-number">3</span>
+                    <div className="step-text">
+                      <strong>Choose Date Format:</strong> Choose the Date range as <strong>You want to track from</strong> (mandatory).
+                    </div>
+                  </div>
+                  <div className="guide-step">
+                    <span className="step-number">4</span>
+                    <div className="step-text">
+                      <strong>Choose JSON Format:</strong> Save the export format to <strong>JSON</strong> (mandatory), select Media Quality as low, and submit the request.
+                    </div>
+                  </div>
+                  <div className="guide-step">
+                    <span className="step-number">5</span>
+                    <div className="step-text">
+                      <strong>Extract & Import:</strong> Once Meta emails the link, download and unzip the archive. Select or drop the unzipped <code>followers_and_following</code> folder right here!
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1266,617 +1337,657 @@ function App() {
         {(followers.length > 0 || following.length > 0) && (
           <div className="dashboard-content-wrapper">
 
-        {/* Summary Cards */}
-        <div className="summary-cards">
-          <div className="summary-card" onClick={() => scrollToSection(followersRef, setShowFollowers)}>
-            <div className="card-icon followers">
-              <FaUserFriends />
-            </div>
-            <div className="card-content">
-              <h3>Followers</h3>
-              <p>{followers.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(followingRef, setShowFollowing)}>
-            <div className="card-icon following">
-              <FaUserCheck />
-            </div>
-            <div className="card-content">
-              <h3>Following</h3>
-              <p>{following.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(notFollowingBackRef)}>
-            <div className="card-icon not-following-back">
-              <FaUserTimes />
-            </div>
-            <div className="card-content">
-              <h3>They Don't Follow Back</h3>
-              <p>{notFollowingBack.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(youDontFollowBackRef)}>
-            <div className="card-icon not-followed-back">
-              <FaUserClock />
-            </div>
-            <div className="card-content">
-              <h3>You Don't Follow Back</h3>
-              <p>{youDontFollowBack.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(pendingRef, setShowPending)}>
-            <div className="card-icon pending">
-              <FaHourglassHalf />
-            </div>
-            <div className="card-content">
-              <h3>Pending Requests</h3>
-              <p>{pendingRequests.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(blockedRef, setShowBlocked)}>
-            <div className="card-icon blocked">
-              <FaUserSlash />
-            </div>
-            <div className="card-content">
-              <h3>Blocked</h3>
-              <p>{blockedUsers.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(receivedRef, setShowReceived)}>
-            <div className="card-icon received">
-              <FaUserPlus />
-            </div>
-            <div className="card-content">
-              <h3>Received Requests</h3>
-              <p>{receivedRequests.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(searchRef, setShowSearch)}>
-            <div className="card-icon search">
-              <FaUserFriends /> {/* Placeholder icon, maybe change later */}
-            </div>
-            <div className="card-content">
-              <h3>Search History</h3>
-              <p>{searchHistory.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(adsRef, setShowAds)}>
-            <div className="card-icon ads">
-              <FaExclamationTriangle /> {/* Placeholder icon */}
-            </div>
-            <div className="card-content">
-              <h3>Ads Viewed</h3>
-              <p>{adsViewed.length}</p>
-            </div>
-          </div>
-          <div className="summary-card" onClick={() => scrollToSection(loginRef, setShowLogin)}>
-            <div className="card-icon login">
-              <FaUserCheck /> {/* Placeholder icon */}
-            </div>
-            <div className="card-content">
-              <h3>Login Activity</h3>
-              <p>{loginActivity.length}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Toggle Buttons */}
-        <div className="toggle-buttons">
-          <button
-            onClick={() => setShowFollowers(!showFollowers)}
-            className={`toggle-btn ${showFollowers ? 'active' : ''}`}
-          >
-            {showFollowers ? 'Hide' : 'Show'} Followers
-          </button>
-          <button
-            onClick={() => setShowFollowing(!showFollowing)}
-            className={`toggle-btn ${showFollowing ? 'active' : ''}`}
-          >
-            {showFollowing ? 'Hide' : 'Show'} Following
-          </button>
-          <button
-            onClick={() => setShowPending(!showPending)}
-            className={`toggle-btn ${showPending ? 'active' : ''}`}
-          >
-            {showPending ? 'Hide' : 'Show'} Pending Requests
-          </button>
-          <button
-            onClick={() => setShowBlocked(!showBlocked)}
-            className={`toggle-btn ${showBlocked ? 'active' : ''}`}
-          >
-            {showBlocked ? 'Hide' : 'Show'} Blocked
-          </button>
-          <button
-            onClick={() => setShowReceived(!showReceived)}
-            className={`toggle-btn ${showReceived ? 'active' : ''}`}
-          >
-            {showReceived ? 'Hide' : 'Show'} Received Requests
-          </button>
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className={`toggle-btn ${showSearch ? 'active' : ''}`}
-          >
-            {showSearch ? 'Hide' : 'Show'} Search History
-          </button>
-          <button
-            onClick={() => setShowAds(!showAds)}
-            className={`toggle-btn ${showAds ? 'active' : ''}`}
-          >
-            {showAds ? 'Hide' : 'Show'} Ads Viewed
-          </button>
-          <button
-            onClick={() => setShowLogin(!showLogin)}
-            className={`toggle-btn ${showLogin ? 'active' : ''}`}
-          >
-            {showLogin ? 'Hide' : 'Show'} Login Activity
-          </button>
-        </div>
-
-        {/* Followers Table */}
-        {showFollowers && (
-          <div className="table-container" ref={followersRef}>
-            <h2 className="table-title">
-              <FaUserFriends /> Your Followers ({filteredFollowers.length === followers.length ? followers.length : `${filteredFollowers.length} of ${followers.length}`})
-            </h2>
-            {filteredFollowers.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th>Profile</th>
-                      <th>Followed On</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredFollowers.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                            {user.isVerified && <span className="verified-badge">✓</span>}
-                          </div>
-                        </td>
-                        <td>
-                          {user.isPrivate ? (
-                            <span className="private-badge">Private</span>
-                          ) : (
-                            <span className="public-badge">Public</span>
-                          )}
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                        <td>{timeSinceFollow(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Summary Cards */}
+            <div className="summary-cards">
+              <div className="summary-card" onClick={() => scrollToSection(followersRef, setShowFollowers)}>
+                <div className="card-icon followers">
+                  <FaUserFriends />
+                </div>
+                <div className="card-content">
+                  <h3>Followers</h3>
+                  <p>{followers.length}</p>
+                </div>
               </div>
-            ) : (
-              <p className="no-results">No matching followers found</p>
+              <div className="summary-card" onClick={() => scrollToSection(followingRef, setShowFollowing)}>
+                <div className="card-icon following">
+                  <FaUserCheck />
+                </div>
+                <div className="card-content">
+                  <h3>Following</h3>
+                  <p>{following.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(notFollowingBackRef)}>
+                <div className="card-icon not-following-back">
+                  <FaUserTimes />
+                </div>
+                <div className="card-content">
+                  <h3>They Don't Follow Back</h3>
+                  <p>{notFollowingBack.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(youDontFollowBackRef)}>
+                <div className="card-icon not-followed-back">
+                  <FaUserClock />
+                </div>
+                <div className="card-content">
+                  <h3>You Don't Follow Back</h3>
+                  <p>{youDontFollowBack.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(pendingRef, setShowPending)}>
+                <div className="card-icon pending">
+                  <FaHourglassHalf />
+                </div>
+                <div className="card-content">
+                  <h3>Pending Requests</h3>
+                  <p>{pendingRequests.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(blockedRef, setShowBlocked)}>
+                <div className="card-icon blocked">
+                  <FaUserSlash />
+                </div>
+                <div className="card-content">
+                  <h3>Blocked</h3>
+                  <p>{blockedUsers.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(receivedRef, setShowReceived)}>
+                <div className="card-icon received">
+                  <FaUserPlus />
+                </div>
+                <div className="card-content">
+                  <h3>Received Requests</h3>
+                  <p>{receivedRequests.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(searchRef, setShowSearch)}>
+                <div className="card-icon search">
+                  <FaUserFriends /> {/* Placeholder icon, maybe change later */}
+                </div>
+                <div className="card-content">
+                  <h3>Search History</h3>
+                  <p>{searchHistory.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(adsRef, setShowAds)}>
+                <div className="card-icon ads">
+                  <FaExclamationTriangle /> {/* Placeholder icon */}
+                </div>
+                <div className="card-content">
+                  <h3>Ads Viewed</h3>
+                  <p>{adsViewed.length}</p>
+                </div>
+              </div>
+              <div className="summary-card" onClick={() => scrollToSection(loginRef, setShowLogin)}>
+                <div className="card-icon login">
+                  <FaUserCheck /> {/* Placeholder icon */}
+                </div>
+                <div className="card-content">
+                  <h3>Login Activity</h3>
+                  <p>{loginActivity.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Toggle Buttons */}
+            <div className="toggle-buttons">
+              <button
+                onClick={() => setShowFollowers(!showFollowers)}
+                className={`toggle-btn ${showFollowers ? 'active' : ''}`}
+              >
+                {showFollowers ? 'Hide' : 'Show'} Followers
+              </button>
+              <button
+                onClick={() => setShowFollowing(!showFollowing)}
+                className={`toggle-btn ${showFollowing ? 'active' : ''}`}
+              >
+                {showFollowing ? 'Hide' : 'Show'} Following
+              </button>
+              <button
+                onClick={() => setShowPending(!showPending)}
+                className={`toggle-btn ${showPending ? 'active' : ''}`}
+              >
+                {showPending ? 'Hide' : 'Show'} Pending Requests
+              </button>
+              <button
+                onClick={() => setShowBlocked(!showBlocked)}
+                className={`toggle-btn ${showBlocked ? 'active' : ''}`}
+              >
+                {showBlocked ? 'Hide' : 'Show'} Blocked
+              </button>
+              <button
+                onClick={() => setShowReceived(!showReceived)}
+                className={`toggle-btn ${showReceived ? 'active' : ''}`}
+              >
+                {showReceived ? 'Hide' : 'Show'} Received Requests
+              </button>
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className={`toggle-btn ${showSearch ? 'active' : ''}`}
+              >
+                {showSearch ? 'Hide' : 'Show'} Search History
+              </button>
+              <button
+                onClick={() => setShowAds(!showAds)}
+                className={`toggle-btn ${showAds ? 'active' : ''}`}
+              >
+                {showAds ? 'Hide' : 'Show'} Ads Viewed
+              </button>
+              <button
+                onClick={() => setShowLogin(!showLogin)}
+                className={`toggle-btn ${showLogin ? 'active' : ''}`}
+              >
+                {showLogin ? 'Hide' : 'Show'} Login Activity
+              </button>
+            </div>
+
+            {/* Followers Table */}
+            {showFollowers && (
+              <div className="table-container" ref={followersRef}>
+                <h2 className="table-title">
+                  <FaUserFriends /> Your Followers ({filteredFollowers.length === followers.length ? followers.length : `${filteredFollowers.length} of ${followers.length}`})
+                </h2>
+                {filteredFollowers.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Status</th>
+                          <th>Profile</th>
+                          <th>Followed On</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredFollowers.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                                {user.isVerified && <span className="verified-badge">✓</span>}
+                              </div>
+                            </td>
+                            <td>
+                              {user.isPrivate ? (
+                                <span className="private-badge">Private</span>
+                              ) : (
+                                <span className="public-badge">Public</span>
+                              )}
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                            <td>{timeSinceFollow(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching followers found</p>
+                )}
+              </div>
+            )}
+
+            {/* Following Table */}
+            {showFollowing && (
+              <div className="table-container" ref={followingRef}>
+                <h2 className="table-title">
+                  <FaUserCheck /> Your Following ({filteredFollowing.length === following.length ? following.length : `${filteredFollowing.length} of ${following.length}`})
+                </h2>
+                {filteredFollowing.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Status</th>
+                          <th>Profile</th>
+                          <th>Followed On</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredFollowing.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                                {user.isVerified && <span className="verified-badge">✓</span>}
+                              </div>
+                            </td>
+                            <td>
+                              {user.isPrivate ? (
+                                <span className="private-badge">Private</span>
+                              ) : (
+                                <span className="public-badge">Public</span>
+                              )}
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                            <td>{timeSinceFollow(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching following profiles found</p>
+                )}
+              </div>
+            )}
+
+            {/* Pending Requests Table */}
+            {showPending && (
+              <div className="table-container highlight-box pending-box" ref={pendingRef}>
+                <h2 className="table-title">
+                  <FaHourglassHalf /> Pending Follow Requests ({filteredPending.length === pendingRequests.length ? pendingRequests.length : `${filteredPending.length} of ${pendingRequests.length}`})
+                </h2>
+                {filteredPending.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Profile</th>
+                          <th>Requested On</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPending.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                              </div>
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                            <td>{timeSinceFollow(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching pending follow requests found</p>
+                )}
+              </div>
+            )}
+
+            {/* Blocked Users Table */}
+            {showBlocked && (
+              <div className="table-container highlight-box blocked-box" ref={blockedRef}>
+                <h2 className="table-title">
+                  <FaUserSlash /> Blocked Users ({filteredBlocked.length === blockedUsers.length ? blockedUsers.length : `${filteredBlocked.length} of ${blockedUsers.length}`})
+                </h2>
+                {filteredBlocked.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Profile</th>
+                          <th>Blocked On</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredBlocked.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                              </div>
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                            <td>{timeSinceFollow(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching blocked users found</p>
+                )}
+              </div>
+            )}
+
+            {/* Received Requests Table */}
+            {showReceived && (
+              <div className="table-container highlight-box received-box" ref={receivedRef}>
+                <h2 className="table-title">
+                  <FaUserPlus /> Received Follow Requests ({filteredReceived.length === receivedRequests.length ? receivedRequests.length : `${filteredReceived.length} of ${receivedRequests.length}`})
+                </h2>
+                {filteredReceived.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Profile</th>
+                          <th>Requested On</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredReceived.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                              </div>
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                            <td>{timeSinceFollow(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching received follow requests found</p>
+                )}
+              </div>
+            )}
+
+            {/* Non-reciprocal Relationships - Side by Side */}
+            <div className="non-reciprocal-container">
+              {/* You Don't Follow Back */}
+              <div className="table-container highlight-box" ref={youDontFollowBackRef}>
+                <h2 className="table-title">
+                  <FaUserClock /> You Don't Follow Back ({filteredYouDontFollowBack.length === youDontFollowBack.length ? youDontFollowBack.length : `${filteredYouDontFollowBack.length} of ${youDontFollowBack.length}`})
+                </h2>
+                {filteredYouDontFollowBack.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Status</th>
+                          <th>Profile</th>
+                          <th>Followed On</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredYouDontFollowBack.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                                {user.isVerified && <span className="verified-badge">✓</span>}
+                              </div>
+                            </td>
+                            <td>
+                              {user.isPrivate ? (
+                                <span className="private-badge">Private</span>
+                              ) : (
+                                <span className="public-badge">Public</span>
+                              )}
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching profiles found</p>
+                )}
+              </div>
+
+              {/* They Don't Follow Back */}
+              <div className="table-container highlight-box" ref={notFollowingBackRef}>
+                <h2 className="table-title">
+                  <FaUserTimes /> They Don't Follow Back ({filteredNotFollowingBack.length === notFollowingBack.length ? notFollowingBack.length : `${filteredNotFollowingBack.length} of ${notFollowingBack.length}`})
+                </h2>
+                {filteredNotFollowingBack.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Status</th>
+                          <th>Profile</th>
+                          <th>Followed On</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredNotFollowingBack.map((user, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <div className="username-cell">
+                                {user.username}
+                                {user.isVerified && <span className="verified-badge">✓</span>}
+                              </div>
+                            </td>
+                            <td>
+                              {user.isPrivate ? (
+                                <span className="private-badge">Private</span>
+                              ) : (
+                                <span className="public-badge">Public</span>
+                              )}
+                            </td>
+                            <td>
+                              <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
+                                Visit Profile
+                              </a>
+                            </td>
+                            <td>{formatDate(user.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching profiles found</p>
+                )}
+              </div>
+            </div>
+
+            {/* Search History Table */}
+            {showSearch && (
+              <div className="table-container highlight-box search-box" ref={searchRef}>
+                <h2 className="table-title">
+                  <FaUserFriends /> Search History ({filteredSearch.length === searchHistory.length ? searchHistory.length : `${filteredSearch.length} of ${searchHistory.length}`})
+                </h2>
+                {filteredSearch.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Search Term</th>
+                          <th>Time</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSearch.map((item, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.title}</td>
+                            <td>{formatDate(item.timestamp)}</td>
+                            <td>{timeSinceFollow(item.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching search history logs found</p>
+                )}
+              </div>
+            )}
+
+            {/* Ads Viewed Table */}
+            {showAds && (
+              <div className="table-container highlight-box ads-box" ref={adsRef}>
+                <h2 className="table-title">
+                  <FaExclamationTriangle /> Ads Viewed ({filteredAds.length === adsViewed.length ? adsViewed.length : `${filteredAds.length} of ${adsViewed.length}`})
+                </h2>
+                {filteredAds.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Advertiser</th>
+                          <th>Time</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAds.map((item, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.author}</td>
+                            <td>{formatDate(item.timestamp)}</td>
+                            <td>{timeSinceFollow(item.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching ads viewing logs found</p>
+                )}
+              </div>
+            )}
+
+            {/* Login Activity Table */}
+            {showLogin && (
+              <div className="table-container highlight-box login-box" ref={loginRef}>
+                <h2 className="table-title">
+                  <FaUserCheck /> Login Activity ({filteredLogins.length === loginActivity.length ? loginActivity.length : `${filteredLogins.length} of ${loginActivity.length}`})
+                </h2>
+                {filteredLogins.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className="connections-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>IP Address</th>
+                          <th>User Agent</th>
+                          <th>Time</th>
+                          <th>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredLogins.map((item, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.ip}</td>
+                            <td>
+                              <div className="user-agent-cell" title={item.userAgent}>
+                                {item.userAgent.substring(0, 50)}...
+                              </div>
+                            </td>
+                            <td>{formatDate(item.timestamp)}</td>
+                            <td>{timeSinceFollow(item.timestamp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="no-results">No matching login activity logs found</p>
+                )}
+              </div>
             )}
           </div>
         )}
-
-        {/* Following Table */}
-        {showFollowing && (
-          <div className="table-container" ref={followingRef}>
-            <h2 className="table-title">
-              <FaUserCheck /> Your Following ({filteredFollowing.length === following.length ? following.length : `${filteredFollowing.length} of ${following.length}`})
-            </h2>
-            {filteredFollowing.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th>Profile</th>
-                      <th>Followed On</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredFollowing.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                            {user.isVerified && <span className="verified-badge">✓</span>}
-                          </div>
-                        </td>
-                        <td>
-                          {user.isPrivate ? (
-                            <span className="private-badge">Private</span>
-                          ) : (
-                            <span className="public-badge">Public</span>
-                          )}
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                        <td>{timeSinceFollow(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching following profiles found</p>
-            )}
-          </div>
+        </>
         )}
 
-        {/* Pending Requests Table */}
-        {showPending && (
-          <div className="table-container highlight-box pending-box" ref={pendingRef}>
-            <h2 className="table-title">
-              <FaHourglassHalf /> Pending Follow Requests ({filteredPending.length === pendingRequests.length ? pendingRequests.length : `${filteredPending.length} of ${pendingRequests.length}`})
-            </h2>
-            {filteredPending.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Profile</th>
-                      <th>Requested On</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPending.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                          </div>
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                        <td>{timeSinceFollow(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching pending follow requests found</p>
-            )}
-          </div>
-        )}
+        {activeTab === 'apps' && <DeveloperApps />}
+        {activeTab === 'privacy' && <PrivacyPolicy />}
 
-        {/* Blocked Users Table */}
-        {showBlocked && (
-          <div className="table-container highlight-box blocked-box" ref={blockedRef}>
-            <h2 className="table-title">
-              <FaUserSlash /> Blocked Users ({filteredBlocked.length === blockedUsers.length ? blockedUsers.length : `${filteredBlocked.length} of ${blockedUsers.length}`})
-            </h2>
-            {filteredBlocked.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Profile</th>
-                      <th>Blocked On</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBlocked.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                          </div>
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                        <td>{timeSinceFollow(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching blocked users found</p>
-            )}
-          </div>
-        )}
-
-        {/* Received Requests Table */}
-        {showReceived && (
-          <div className="table-container highlight-box received-box" ref={receivedRef}>
-            <h2 className="table-title">
-              <FaUserPlus /> Received Follow Requests ({filteredReceived.length === receivedRequests.length ? receivedRequests.length : `${filteredReceived.length} of ${receivedRequests.length}`})
-            </h2>
-            {filteredReceived.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Profile</th>
-                      <th>Requested On</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReceived.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                          </div>
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                        <td>{timeSinceFollow(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching received follow requests found</p>
-            )}
-          </div>
-        )}
-
-        {/* Non-reciprocal Relationships - Side by Side */}
-        <div className="non-reciprocal-container">
-          {/* You Don't Follow Back */}
-          <div className="table-container highlight-box" ref={youDontFollowBackRef}>
-            <h2 className="table-title">
-              <FaUserClock /> You Don't Follow Back ({filteredYouDontFollowBack.length === youDontFollowBack.length ? youDontFollowBack.length : `${filteredYouDontFollowBack.length} of ${youDontFollowBack.length}`})
-            </h2>
-            {filteredYouDontFollowBack.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th>Profile</th>
-                      <th>Followed On</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredYouDontFollowBack.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                            {user.isVerified && <span className="verified-badge">✓</span>}
-                          </div>
-                        </td>
-                        <td>
-                          {user.isPrivate ? (
-                            <span className="private-badge">Private</span>
-                          ) : (
-                            <span className="public-badge">Public</span>
-                          )}
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching profiles found</p>
-            )}
-          </div>
-
-          {/* They Don't Follow Back */}
-          <div className="table-container highlight-box" ref={notFollowingBackRef}>
-            <h2 className="table-title">
-              <FaUserTimes /> They Don't Follow Back ({filteredNotFollowingBack.length === notFollowingBack.length ? notFollowingBack.length : `${filteredNotFollowingBack.length} of ${notFollowingBack.length}`})
-            </h2>
-            {filteredNotFollowingBack.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Username</th>
-                      <th>Status</th>
-                      <th>Profile</th>
-                      <th>Followed On</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredNotFollowingBack.map((user, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className="username-cell">
-                            {user.username}
-                            {user.isVerified && <span className="verified-badge">✓</span>}
-                          </div>
-                        </td>
-                        <td>
-                          {user.isPrivate ? (
-                            <span className="private-badge">Private</span>
-                          ) : (
-                            <span className="public-badge">Public</span>
-                          )}
-                        </td>
-                        <td>
-                          <a href={user.href} target="_blank" rel="noopener noreferrer" className="profile-link">
-                            Visit Profile
-                          </a>
-                        </td>
-                        <td>{formatDate(user.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching profiles found</p>
-            )}
-          </div>
-        </div>
-
-        {/* Search History Table */}
-        {showSearch && (
-          <div className="table-container highlight-box search-box" ref={searchRef}>
-            <h2 className="table-title">
-              <FaUserFriends /> Search History ({filteredSearch.length === searchHistory.length ? searchHistory.length : `${filteredSearch.length} of ${searchHistory.length}`})
-            </h2>
-            {filteredSearch.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Search Term</th>
-                      <th>Time</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSearch.map((item, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{item.title}</td>
-                        <td>{formatDate(item.timestamp)}</td>
-                        <td>{timeSinceFollow(item.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching search history logs found</p>
-            )}
-          </div>
-        )}
-
-        {/* Ads Viewed Table */}
-        {showAds && (
-          <div className="table-container highlight-box ads-box" ref={adsRef}>
-            <h2 className="table-title">
-              <FaExclamationTriangle /> Ads Viewed ({filteredAds.length === adsViewed.length ? adsViewed.length : `${filteredAds.length} of ${adsViewed.length}`})
-            </h2>
-            {filteredAds.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Advertiser</th>
-                      <th>Time</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAds.map((item, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{item.author}</td>
-                        <td>{formatDate(item.timestamp)}</td>
-                        <td>{timeSinceFollow(item.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching ads viewing logs found</p>
-            )}
-          </div>
-        )}
-
-        {/* Login Activity Table */}
-        {showLogin && (
-          <div className="table-container highlight-box login-box" ref={loginRef}>
-            <h2 className="table-title">
-              <FaUserCheck /> Login Activity ({filteredLogins.length === loginActivity.length ? loginActivity.length : `${filteredLogins.length} of ${loginActivity.length}`})
-            </h2>
-            {filteredLogins.length > 0 ? (
-              <div className="table-scroll">
-                <table className="connections-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>IP Address</th>
-                      <th>User Agent</th>
-                      <th>Time</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLogins.map((item, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{item.ip}</td>
-                        <td>
-                          <div className="user-agent-cell" title={item.userAgent}>
-                            {item.userAgent.substring(0, 50)}...
-                          </div>
-                        </td>
-                        <td>{formatDate(item.timestamp)}</td>
-                        <td>{timeSinceFollow(item.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="no-results">No matching login activity logs found</p>
-            )}
-          </div>
-        )}
+        <AdBanner
+          client={import.meta.env.VITE_ADSENSE_CLIENT_ID}
+          slot={import.meta.env.VITE_ADSENSE_BOTTOM_SLOT}
+          mode={darkMode ? 'dark' : 'light'}
+        />
       </div>
-    )}
-  </div>
 
-  <footer className="app-footer">
-    <p>Instagram Connections Analyzer &copy; {new Date().getFullYear()}</p>
-  </footer>
-</div>
-);
+      <footer className="app-footer">
+        <div className="footer-content">
+          <div className="footer-links">
+            <button 
+              className={`footer-link-btn ${activeTab === 'analyzer' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('analyzer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              Analyzer
+            </button>
+            <button 
+              className={`footer-link-btn ${activeTab === 'apps' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('apps'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              Recommended Apps
+            </button>
+            <button 
+              className={`footer-link-btn ${activeTab === 'privacy' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              Privacy Policy
+            </button>
+          </div>
+          
+          <div className="footer-signature">
+            <span>Made with </span>
+            <FaHeart className="footer-heart" />
+            <span> in India</span>
+          </div>
+          
+          <p className="footer-copy">InstaMint &copy; {new Date().getFullYear()}. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 export default App;
