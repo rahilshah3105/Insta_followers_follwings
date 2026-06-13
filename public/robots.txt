@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap placeholder (if deploy domain is configured)
+# Sitemap: https://yourdomain.com/sitemap.xml
