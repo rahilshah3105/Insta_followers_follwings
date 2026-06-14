@@ -433,61 +433,87 @@ function App() {
 
     console.log('Drop event triggered. Items:', e.dataTransfer.items ? e.dataTransfer.items.length : 0, 'Files:', e.dataTransfer.files ? e.dataTransfer.files.length : 0);
 
-    setIsLoading(true);
-    setLoadingMessage('Scanning dropped folder...');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const filesList = [];
-    const traverseEntry = async (entry) => {
-      console.log('Traversing entry:', entry.name, 'isFile:', entry.isFile, 'isDirectory:', entry.isDirectory);
-      if (entry.isFile) {
-        const file = await new Promise((resolve) => entry.file(resolve));
-        console.log('Found file:', file.name, 'Size:', file.size);
-        filesList.push(file);
-      } else if (entry.isDirectory) {
-        const reader = entry.createReader();
-        const readAllEntries = async () => {
-          let allEntries = [];
-          let results = await new Promise((resolve) => reader.readEntries(resolve));
-          while (results.length > 0) {
-            allEntries = allEntries.concat(results);
-            results = await new Promise((resolve) => reader.readEntries(resolve));
-          }
-          return allEntries;
-        };
-        try {
-          const entries = await readAllEntries();
-          console.log(`Directory ${entry.name} has ${entries.length} children.`);
-          for (const ent of entries) {
-            await traverseEntry(ent);
-          }
-        } catch (err) {
-          console.error('Error reading directory entries:', err);
-        }
-      }
-    };
+    // 1. Gather files/entries synchronously before any async yields (like setTimeout).
+    // The browser clears the DataTransfer object (items/files) as soon as the event handler yields.
+    const items = [];
+    const files = [];
 
     if (e.dataTransfer.items) {
-      const promises = [];
       for (let i = 0; i < e.dataTransfer.items.length; i++) {
         const item = e.dataTransfer.items[i];
         if (item.kind === 'file') {
           const entry = item.webkitGetAsEntry();
           if (entry) {
-            promises.push(traverseEntry(entry));
+            items.push(entry);
           } else {
             const file = item.getAsFile();
-            if (file) filesList.push(file);
+            if (file) files.push(file);
           }
         }
       }
-      await Promise.all(promises);
     } else if (e.dataTransfer.files) {
       for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        filesList.push(e.dataTransfer.files[i]);
+        files.push(e.dataTransfer.files[i]);
       }
     }
 
+    // 2. Set loading state now that we have captured synchronous file/entry references
+    setIsLoading(true);
+    setLoadingMessage('Scanning dropped folder...');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const filesList = [...files];
+
+    const traverseEntry = async (entry) => {
+      console.log('Traversing entry:', entry.name, 'isFile:', entry.isFile, 'isDirectory:', entry.isDirectory);
+      if (entry.isFile) {
+        try {
+          const file = await new Promise((resolve, reject) => {
+            entry.file(resolve, reject);
+          });
+          console.log('Found file:', file.name, 'Size:', file.size);
+          filesList.push(file);
+        } catch (fileErr) {
+          console.warn(`Skipping file entry due to read error on ${entry.name}:`, fileErr);
+        }
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const readAllEntries = async () => {
+          let allEntries = [];
+          const readChunk = () => {
+            return new Promise((resolve, reject) => {
+              reader.readEntries(resolve, reject);
+            });
+          };
+          try {
+            let results = await readChunk();
+            while (results.length > 0) {
+              allEntries = allEntries.concat(results);
+              results = await readChunk();
+            }
+          } catch (readErr) {
+            console.error(`Error reading entries for directory ${entry.name}:`, readErr);
+          }
+          return allEntries;
+        };
+        try {
+          const entriesList = await readAllEntries();
+          console.log(`Directory ${entry.name} has ${entriesList.length} children.`);
+          for (const ent of entriesList) {
+            await traverseEntry(ent);
+          }
+        } catch (err) {
+          console.error('Error in directory child traversal:', err);
+        }
+      }
+    };
+
+    if (items.length > 0) {
+      const promises = items.map(entry => traverseEntry(entry));
+      await Promise.all(promises);
+    }
+
+    console.log('Files list size after traversal:', filesList.length);
     await processFiles(filesList);
   };
 
