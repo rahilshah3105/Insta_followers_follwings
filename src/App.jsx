@@ -46,6 +46,8 @@ function App() {
   const [searchHistoryData, setSearchHistoryData] = useState(null);
   const [adsViewedData, setAdsViewedData] = useState(null);
   const [loginActivityData, setLoginActivityData] = useState(null);
+  const [commentsData, setCommentsData] = useState(null);
+  const [contactsData, setContactsData] = useState(null);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
 
   // Refs for scrolling
@@ -173,6 +175,8 @@ function App() {
         setSearchHistoryData(getFromLocalStorage('insta_searchHistoryData'));
         setAdsViewedData(getFromLocalStorage('insta_adsViewedData'));
         setLoginActivityData(getFromLocalStorage('insta_loginActivityData'));
+        setCommentsData(getFromLocalStorage('insta_commentsData'));
+        setContactsData(getFromLocalStorage('insta_contactsData'));
         setIsUsingUploadedData(true);
         setIsLoading(false);
       } else {
@@ -270,6 +274,8 @@ function App() {
     let newSearch = isUsingUploadedData ? searchHistoryData : null;
     let newAds = isUsingUploadedData ? adsViewedData : null;
     let newLogin = isUsingUploadedData ? loginActivityData : null;
+    let newComments = isUsingUploadedData ? commentsData : null;
+    let newContacts = isUsingUploadedData ? contactsData : null;
 
     // Keep track of which categories were actually touched in this upload batch
     let categoriesTouched = {
@@ -281,7 +287,9 @@ function App() {
       received: false,
       search: false,
       ads: false,
-      login: false
+      login: false,
+      comments: false,
+      contacts: false
     };
 
     // Filter file list to JSON files only
@@ -358,6 +366,16 @@ function App() {
           newLogin = mergeJsonData(newLogin, parsed, 'account_history_login_history');
           categoriesTouched.login = true;
           uploadedCount++;
+        } else if (name.includes('post_comments') || name.includes('comments')) {
+          console.log(`File ${file.name} matched COMMENTS category.`);
+          newComments = mergeJsonData(newComments, parsed, 'comments_media_comments');
+          categoriesTouched.comments = true;
+          uploadedCount++;
+        } else if (name.includes('connections') || name.includes('contacts')) {
+          console.log(`File ${file.name} matched SYNCED CONTACTS category.`);
+          newContacts = mergeJsonData(newContacts, parsed, 'contacts_contact_info');
+          categoriesTouched.contacts = true;
+          uploadedCount++;
         } else {
           console.log(`File ${file.name} did not match any category filters.`);
         }
@@ -382,6 +400,8 @@ function App() {
         if (!categoriesTouched.search) newSearch = null;
         if (!categoriesTouched.ads) newAds = null;
         if (!categoriesTouched.login) newLogin = null;
+        if (!categoriesTouched.comments) newComments = null;
+        if (!categoriesTouched.contacts) newContacts = null;
       }
 
       // Update states
@@ -394,6 +414,8 @@ function App() {
       setSearchHistoryData(newSearch);
       setAdsViewedData(newAds);
       setLoginActivityData(newLogin);
+      setCommentsData(newComments);
+      setContactsData(newContacts);
 
       // Save to localStorage
       saveToLocalStorage('insta_followersData', newFollowers);
@@ -405,6 +427,8 @@ function App() {
       saveToLocalStorage('insta_searchHistoryData', newSearch);
       saveToLocalStorage('insta_adsViewedData', newAds);
       saveToLocalStorage('insta_loginActivityData', newLogin);
+      saveToLocalStorage('insta_commentsData', newComments);
+      saveToLocalStorage('insta_contactsData', newContacts);
 
       setIsUsingUploadedData(true);
     }
@@ -527,7 +551,9 @@ function App() {
       'insta_receivedRequestsData',
       'insta_searchHistoryData',
       'insta_adsViewedData',
-      'insta_loginActivityData'
+      'insta_loginActivityData',
+      'insta_commentsData',
+      'insta_contactsData'
     ];
     keys.forEach(k => localStorage.removeItem(k));
 
@@ -540,6 +566,8 @@ function App() {
     setSearchHistoryData(null);
     setAdsViewedData(null);
     setLoginActivityData(null);
+    setCommentsData(null);
+    setContactsData(null);
     setIsUsingUploadedData(false);
   };
 
@@ -1082,6 +1110,82 @@ function App() {
     return logins;
   };
 
+  const extractComments = (data) => {
+    if (!data) return [];
+    let list = [];
+    if (data.comments_media_comments && Array.isArray(data.comments_media_comments)) {
+      list = data.comments_media_comments;
+    } else if (Array.isArray(data)) {
+      list = data;
+    } else if (typeof data === 'object') {
+      for (const k of Object.keys(data)) {
+        if (Array.isArray(data[k])) {
+          list = data[k];
+          break;
+        }
+      }
+    }
+
+    const comments = [];
+    list.forEach(item => {
+      let text = '';
+      let postOwner = '';
+      let timestamp = null;
+      let postUrl = '';
+
+      if (item.title) {
+        if (item.title.match(/^\d{4}-\d{2}-\d{2}/)) {
+          timestamp = new Date(item.title);
+        } else {
+          postOwner = item.title;
+        }
+      }
+      
+      if (item.string_list_data && Array.isArray(item.string_list_data) && item.string_list_data[0]) {
+        const commentData = item.string_list_data[0];
+        text = commentData.value || '';
+        postUrl = commentData.href || '';
+        timestamp = commentData.timestamp ? new Date(commentData.timestamp * 1000) : timestamp;
+      }
+
+      comments.push({
+        text,
+        postOwner: postOwner || 'Instagram User',
+        postUrl,
+        timestamp
+      });
+    });
+    return comments;
+  };
+
+  const extractContacts = (data) => {
+    if (!data) return [];
+    let list = [];
+    if (data.contacts_contact_info && Array.isArray(data.contacts_contact_info)) {
+      list = data.contacts_contact_info;
+    } else if (Array.isArray(data)) {
+      list = data;
+    } else if (typeof data === 'object') {
+      for (const k of Object.keys(data)) {
+        if (Array.isArray(data[k])) {
+          list = data[k];
+          break;
+        }
+      }
+    }
+
+    const contacts = [];
+    list.forEach(item => {
+      let name = item.title || 'Unknown Contact';
+      let contactDetails = '';
+      if (item.string_list_data && Array.isArray(item.string_list_data) && item.string_list_data[0]) {
+        contactDetails = item.string_list_data[0].value || '';
+      }
+      contacts.push({ name, contactDetails });
+    });
+    return contacts;
+  };
+
   // Find non-reciprocal relationships
   const findUniqueRelationships = (followers, following) => {
 
@@ -1220,6 +1324,8 @@ function App() {
 
   const followers = extractFollowers(followersData);
   const following = extractFollowing(followingData, unfollowedData);
+  const comments = extractComments(commentsData);
+  const contacts = extractContacts(contactsData);
 
   // Filtered lists based on search query
   const filteredFollowers = followers.filter(user => user.username.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -1234,6 +1340,14 @@ function App() {
   const filteredLogins = loginActivity.filter(item =>
     item.ip.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.userAgent.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredComments = comments.filter(item =>
+    item.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.postOwner.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredContacts = contacts.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.contactDetails.toLowerCase().includes(searchQuery.toLowerCase())
   );
   return (
     <div className={`app-container ${darkMode ? 'dark-mode' : ''}`}>
@@ -1250,6 +1364,12 @@ function App() {
               className={`nav-tab-btn ${activeTab === 'analyzer' ? 'active' : ''}`}
             >
               Analyzer
+            </button>
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`nav-tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
+            >
+              Engagement Hub
             </button>
             <button
               onClick={() => setActiveTab('apps')}
@@ -1410,9 +1530,21 @@ function App() {
                     <div className={`status-pill ${adsViewed.length > 0 ? 'active' : ''}`}>
                       Ads Seen: {adsViewed.length > 0 ? `${adsViewed.length} ads` : 'Not loaded'}
                     </div>
-                    <div className={`status-pill ${loginActivity.length > 0 ? 'active' : ''}`}>
+                     <div className={`status-pill ${loginActivity.length > 0 ? 'active' : ''}`}>
                       Logins: {loginActivity.length > 0 ? `${loginActivity.length} logins` : 'Not loaded'}
                     </div>
+                    <div className={`status-pill ${comments.length > 0 ? 'active' : ''}`}>
+                      Comments: {comments.length > 0 ? `${comments.length} items` : 'Not loaded'}
+                    </div>
+                    <div className={`status-pill ${contacts.length > 0 ? 'active' : ''}`}>
+                      Synced Contacts: {contacts.length > 0 ? `${contacts.length} contacts` : 'Not loaded'}
+                    </div>
+                  </div>
+                  <div className="data-accuracy-disclaimer">
+                    <FaExclamationTriangle className="disclaimer-icon" />
+                    <span>
+                      <strong>Data Accuracy Notice:</strong> InstaMint processes your local Instagram JSON export offline for 100% privacy. Live verification of deleted pages or real-time unfollows is not possible because we do not connect to Instagram's servers to protect your credentials. The stats reflect the exact status at the time of your export.
+                    </span>
                   </div>
                 </div>
               )}
@@ -2052,6 +2184,175 @@ function App() {
           </>
         )}
 
+        {activeTab === 'summary' && (
+          <div className="dashboard-content-wrapper summary-tab-content">
+            {comments.length === 0 && contacts.length === 0 ? (
+              <div className="empty-state-card" style={{ padding: '4rem 2rem', textAlignment: 'center' }}>
+                <FaHourglassHalf className="empty-state-icon" style={{ fontSize: '3rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', animation: 'spin 3s linear infinite' }} />
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem' }}>No Engagement Data Loaded</h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                  To view your comments and contacts list, please import the respective JSON files from your Instagram export folder:
+                </p>
+                <div style={{ maxWidth: '480px', margin: '0 auto', textAlign: 'left', background: 'var(--glass-bg)', padding: '1.5rem 2rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                  <ul className="guidelines-list" style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-gradient)' }}></span>
+                      <span><strong>Post Comments</strong>: <code>comments/post_comments_1.json</code></span>
+                    </li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-gradient)' }}></span>
+                      <span><strong>Synced Contacts</strong>: <code>contacts/connections.json</code></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Stats Summary Cards */}
+                <div className="summary-cards">
+                  <div className="summary-card">
+                    <div className="card-icon search" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+                      <FaInstagram />
+                    </div>
+                    <div className="card-content">
+                      <h3>Total Comments Made</h3>
+                      <p>{comments.length}</p>
+                    </div>
+                  </div>
+                  <div className="summary-card">
+                    <div className="card-icon login" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
+                      <FaUserPlus />
+                    </div>
+                    <div className="card-content">
+                      <h3>Synced Contacts</h3>
+                      <p>{contacts.length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Most Commented Grid */}
+                {comments.length > 0 && (
+                  <div className="table-container highlight-box search-box" style={{ marginBottom: '2.5rem' }}>
+                    <h3 className="table-title">🔥 Top Commented Accounts</h3>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                      These are the profiles you comment on the most.
+                    </p>
+                    <div className="most-commented-list">
+                      {(() => {
+                        const counts = {};
+                        comments.forEach(c => {
+                          if (c.postOwner) {
+                            counts[c.postOwner] = (counts[c.postOwner] || 0) + 1;
+                          }
+                        });
+                        const topCommented = Object.entries(counts)
+                          .map(([username, count]) => ({ username, count }))
+                          .sort((a, b) => b.count - a.count)
+                          .slice(0, 5);
+
+                        return topCommented.length > 0 ? (
+                          <div className="top-interactors-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                            {topCommented.map((item, index) => (
+                              <div key={index} className="interactor-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', background: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                                <span className="rank-badge" style={{ fontWeight: '800', background: 'var(--primary-gradient)', webkitBackgroundClip: 'text', webkitTextFillColor: 'transparent' }}>#{index + 1}</span>
+                                <div className="interactor-info" style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span className="interactor-name" style={{ fontWeight: '600', color: 'var(--text-main)' }}>{item.username}</span>
+                                  <span className="interactor-count" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.count} comment{item.count > 1 ? 's' : ''}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="no-results">No comment frequencies detected.</p>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Comments Table */}
+                {comments.length > 0 && (
+                  <div className="table-container highlight-box" style={{ marginBottom: '2.5rem' }}>
+                    <h3 className="table-title">💬 Post Comments History</h3>
+                    <div className="table-scroll">
+                      {filteredComments.length > 0 ? (
+                        <table className="connections-table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Account</th>
+                              <th>Comment Text</th>
+                              <th>Date</th>
+                              <th>Post Link</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredComments.map((item, index) => (
+                              <tr key={index}>
+                                <td>{index + 1}</td>
+                                <td className="username-cell">{item.postOwner}</td>
+                                <td style={{ maxWidth: '400px', wordBreak: 'break-word' }}>"{item.text}"</td>
+                                <td>{formatDate(item.timestamp)}</td>
+                                <td>
+                                  {item.postUrl ? (
+                                    <a
+                                      href={item.postUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="profile-link"
+                                    >
+                                      View Post
+                                    </a>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-secondary)' }}>N/A</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p className="no-results">No comments match search query</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contacts Table */}
+                {contacts.length > 0 && (
+                  <div className="table-container highlight-box received-box" style={{ marginBottom: '2.5rem' }}>
+                    <h3 className="table-title">📞 Synced Device Contacts</h3>
+                    <div className="table-scroll">
+                      {filteredContacts.length > 0 ? (
+                        <table className="connections-table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Contact Name</th>
+                              <th>Contact Information</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredContacts.map((item, index) => (
+                              <tr key={index}>
+                                <td>{index + 1}</td>
+                                <td style={{ fontWeight: '600' }}>{item.name}</td>
+                                <td>{item.contactDetails || <span style={{ color: 'var(--text-secondary)' }}>No Info</span>}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p className="no-results">No contacts match search query</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {activeTab === 'apps' && <DeveloperApps />}
         {activeTab === 'privacy' && <PrivacyPolicy />}
 
@@ -2070,6 +2371,12 @@ function App() {
               onClick={() => { setActiveTab('analyzer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             >
               Analyzer
+            </button>
+            <button
+              className={`footer-link-btn ${activeTab === 'summary' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              Engagement Hub
             </button>
             <button
               className={`footer-link-btn ${activeTab === 'apps' ? 'active' : ''}`}

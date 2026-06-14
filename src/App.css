@@ -1523,4 +1523,75 @@ body {
   }
 }
 
+/* Data Accuracy Disclaimer Banner */
+.data-accuracy-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 1rem 1.5rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #d97706;
+}
+
+.dark-mode .data-accuracy-disclaimer {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.disclaimer-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Empty State Card */
+.empty-state-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  padding: 4rem 2rem;
+  text-align: center;
+  box-shadow: var(--glass-shadow);
+  animation: slideUp 0.5s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  animation: pulseLogo 2s ease-in-out infinite;
+}
+
+.guidelines-list li {
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+/* Top Interactors styling */
+.interactor-card {
+  transition: var(--transition);
+}
+
+.interactor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #6366f1 !important;
+}
+
+.dark-mode .interactor-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+
 
