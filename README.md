@@ -1,60 +1,109 @@
-# Instagram Connections Analyzer 🔍
+# InstaMint 🔍 | Instagram Connections Analyzer & Unfollower Tracker
 
-Analyze your Instagram followers/following to see who doesn't follow you back.
+[![React Version](https://img.shields.io/badge/React-v18.3-blue.svg)](https://react.dev/)
+[![Vite Version](https://img.shields.io/badge/Vite-v6.0-purple.svg)](https://vite.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-## 📥 How to Get Instagram Data
+InstaMint is a highly secure, client-side web application designed to help users analyze their Instagram connections, track non-reciprocal relationships (who doesn't follow you back, and who you don't follow back), view pending requests, search logs, and activity. 
 
-1. **Request your Instagram data**:
-   - Mobile App: Go to Instagram Settings → Account Center → Your Information and Permissions → Download Your Information
-   - Web App: Go to [Instagram](https://www.instagram.com/accounts/edit/) Account Center → See more in Account Center → Your Information and Permissions → Download Your Information
-   - Click on the Download or Transfer information button → Some of your information 
-   - Select the **followers and following** option → Click on Next button → Select Download to this device option
-   - Select the **Date range** option (optional)
-   - Select Format: **JSON** and Save it
-   - Click on the **Create Files** button
-   - You'll receive a link on your **email** within 24 hours based on your network speed
+Built with privacy at its core, **all data is processed entirely in the user's browser—no data is uploaded to external servers.**
 
-2. **Download and extract**:
-   - Click the download link from Instagram
-   - Unzip the downloaded file
-   - **Download and Extract/Unzip your folder in the assets folder**
+---
 
-3. **Find required files**:
-   - Navigate to: `followers_and_following` folder
-   - You need these files:
-     - `followers_1.json`
-     - `following.json`
-   - Put your json files in: `followers_and_following` folder, which is inside the `assets` folder in the project
+## 💡 The Problem It Solves
 
-## 🛠️ Project Setup
+Third-party Instagram analyzer apps are notoriously unsafe. They frequently require users to input their Instagram credentials (username and password) directly, risking account suspension, hacking, or data breaches. 
 
-1. **Clone repository**:
+**InstaMint solves this security issue by:**
+1. Eliminating the need for passwords or account log-ins.
+2. Utilizing Instagram's official data exports (JSON format).
+3. Parsing and comparing files entirely client-side using JavaScript, keeping personal data 100% private.
+
+---
+
+## ✨ Key Features
+
+* **Instant Unfollower Tracking**: View a clean list of people who do not follow you back.
+* **Mutual & Fans Analysis**: Easily see your mutual connections and fans (people who follow you but you do not follow back).
+* **Extended Insights**: View pending follow requests, blocked users, search history logs, and login activity.
+* **Super-Fast Directory Ingestion**: Simply drag and drop your unzipped Instagram export folder directly into the browser.
+* **Premium UX/UI**: Beautiful modern design system featuring glassmorphic panels, smooth micro-animations, theme toggles, and responsive grid layouts.
+* **Instant Filtering & Searching**: Instantly find usernames, IPs, or agents across all tables with real-time global search.
+* **Responsive Layout**: Designed for seamless desktop, tablet, and mobile user experiences.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Frontend Framework**: React (v18.3.1)
+* **Build Tool**: Vite (v6.0.5)
+* **Styling & Theme**: Vanilla CSS (Premium Glassmorphic Design System) & Bootstrap 5
+* **State & Performance**: React hooks with browser-based `localStorage` caching and optimized event loop yielding
+* **Icons**: React Icons (FaIcon library)
+
+---
+
+## 📥 How to Get Your Instagram Data
+
+1. Open the **Instagram** app on your phone or visit [Instagram Web](https://www.instagram.com/).
+2. Navigate to: **Account Center** &rarr; **Your Information and Permissions** &rarr; **Download Your Information**.
+3. Select **"Some of your information"** and choose only **"Followers and following"** (this generates the file in minutes rather than hours/days).
+4. Select Format: **JSON**, Media Quality: **Low** (to minimize download size), and click **Create Files**.
+5. Once your data is ready, download and unzip the zip archive to your device.
+6. Open InstaMint and drag-and-drop the unzipped `followers_and_following` folder directly onto the screen.
+
+---
+
+## 🚀 Installation & Local Setup
+
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed (v18+ recommended).
+
+### Steps
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/instagram-connections-analyzer.git
-   cd instagram-connections-analyzer
+   git clone https://github.com/rahilshah3105/Insta_followers_follwings.git
+   cd Insta_followers_follwings
+   ```
 
-2. **Install dependencies**:
+2. **Install dependencies:**
    ```bash
    npm install
+   ```
 
-3. **Run the app**:
+3. **Start the development server:**
    ```bash
-   npm start
+   npm run dev
+   ```
 
-🌟 Features
-Dark/Light mode 
+4. **Open the browser:**
+   Navigate to the local address displayed in your terminal (usually `http://localhost:5173`).
 
-Mobile-friendly interface
+---
 
-Interactive tables
+## 📸 Screenshots
 
-Quick stats summary
+| Light Mode Dashboard | Dark Mode Dashboard |
+|---|---|
+| *[Placeholder: Add Light Mode Screenshot]* | *[Placeholder: Add Dark Mode Screenshot]* |
 
-Key points included:
-1. Clear steps to download Instagram data
-2. Exact file locations needed
-3. Simple setup instructions
-4. Visual preview suggestion
-5. Core functionality highlights
+| Drag & Drop Uploader | Analysis & Connections Table |
+|---|---|
+| *[Placeholder: Add Uploader Screenshot]* | *[Placeholder: Add Table View Screenshot]* |
 
-Would you like me to add any specific troubleshooting steps or additional configuration details?
+---
+
+## 🔮 Future Improvements
+
+* [ ] **Data Visualizations**: Add interactive pie/bar charts summarizing followers vs. following ratios over time.
+* [ ] **Offline PWA Support**: Enable Progressive Web App capabilities for complete offline operation.
+* [ ] **Extended Data Parsing**: Add support for other parts of the Instagram export like likes, comments, and direct message statistics.
+* [ ] **Automated PDF Report Generation**: Export unfollower reports with one click.
+
+---
+
+## 👥 Author
+
+Created by **[Rahil Shah](https://github.com/rahilshah3105)** (rahilshah3105)
+
+If you found this tool helpful, feel free to star the repository ⭐ or reach out!
