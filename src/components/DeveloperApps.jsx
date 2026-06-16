@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaExternalLinkAlt, FaClipboardList, FaFont, FaKey, FaNewspaper, FaCode } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaClipboardList, FaFont, FaKey, FaNewspaper, FaCode, FaInstagram } from 'react-icons/fa';
 
 const APPS = [
   {
@@ -7,7 +7,21 @@ const APPS = [
     description: 'Format your code snippets with a simple interface supporting multiple languages and themes.',
     url: 'https://devmint-tools.vercel.app/',
     tag: 'Developer',
-    icon: <FaClipboardList size={22} className="app-icon-blue" />
+    icon: <FaCode size={20} className="app-icon-blue" />
+  },
+  {
+    title: 'Instagram Analyzer',
+    description: 'Analyze your Instagram connections, unfollowers, requests, and profile interactions.',
+    url: 'https://instautility.netlify.app/',
+    tag: 'Social',
+    icon: <FaInstagram size={20} className="app-icon-pink" />
+  },
+  {
+    title: 'Password Manager',
+    description: 'Generate secure passwords and manage them in a local vault with simple import/export support.',
+    url: 'https://passgen-tools.vercel.app/',
+    tag: 'Security',
+    icon: <FaKey size={20} className="app-icon-emerald" />
   },
   {
     title: 'Word Utils',
@@ -24,25 +38,11 @@ const APPS = [
     icon: <FaClipboardList size={22} className="app-icon-blue" />
   },
   {
-    title: 'Password Manager',
-    description: 'Generate secure passwords and manage them in a local vault with simple import/export support.',
-    url: 'https://passgen-tools.vercel.app/',
-    tag: 'Security',
-    icon: <FaKey size={20} className="app-icon-emerald" />
-  },
-  {
     title: 'NewsPulse',
     description: 'Read latest headlines by category with a responsive news reader featuring bookmarks and dark mode.',
     url: 'https://getyournewspulse.netlify.app/',
     tag: 'Information',
     icon: <FaNewspaper size={20} className="app-icon-amber" />
-  },
-  {
-    title: 'Bing Cypress Search',
-    description: 'A Cypress automation project for validating Bing search flows and end-to-end browser scenarios.',
-    url: 'https://github.com/rahilshah3105/bing-cypress-search',
-    tag: 'Automation',
-    icon: <FaCode size={20} className="app-icon-rose" />
   },
 ];
 
