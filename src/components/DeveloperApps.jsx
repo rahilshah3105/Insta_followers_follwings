@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaExternalLinkAlt, FaClipboardList, FaFont, FaKey, FaNewspaper, FaCode, FaInstagram } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaClipboardList, FaFont, FaKey, FaNewspaper, FaCode, FaInstagram, FaChrome } from 'react-icons/fa';
 
 const APPS = [
   {
@@ -8,13 +8,6 @@ const APPS = [
     url: 'https://devmint-tools.vercel.app/',
     tag: 'Developer',
     icon: <FaCode size={20} className="app-icon-blue" />
-  },
-  {
-    title: 'Instagram Analyzer',
-    description: 'Analyze your Instagram connections, unfollowers, requests, and profile interactions.',
-    url: 'https://instautility.netlify.app/',
-    tag: 'Social',
-    icon: <FaInstagram size={20} className="app-icon-pink" />
   },
   {
     title: 'Password Manager',
@@ -43,6 +36,13 @@ const APPS = [
     url: 'https://getyournewspulse.netlify.app/',
     tag: 'Information',
     icon: <FaNewspaper size={20} className="app-icon-amber" />
+  },
+  {
+    title: 'Chrome Extension',
+    description: 'Access all your favorite developer, social, and security utilities instantly from your browser toolbar.',
+    url: 'https://github.com/rahilshah3105',
+    tag: 'Extension',
+    icon: <FaChrome size={20} className="app-icon-rose" />
   },
 ];
 
